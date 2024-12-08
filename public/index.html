@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Document Chat</h1>
+        
+        <!-- Upload Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Upload Document</h2>
+            <form id="uploadForm" class="space-y-4">
+                <input type="file" accept="image/*,.pdf" class="w-full" id="fileInput">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Upload & Process
+                </button>
+            </form>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Chat</h2>
+            <div id="chatMessages" class="space-y-4 mb-4 h-96 overflow-y-auto"></div>
+            <form id="chatForm" class="flex gap-2">
+                <input type="text" id="questionInput" placeholder="Ask a question..." 
+                       class="flex-1 border rounded px-3 py-2">
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const chatForm = document.getElementById('chatForm');
+        const chatMessages = document.getElementById('chatMessages');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/api/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                alert('Document processed successfully!');
+            } catch (error) {
+                alert('Error processing document');
+            }
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = questionInput.value;
+            addMessage('user', question);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                const data = await response.json();
+                addMessage('assistant', data.answer);
+            } catch (error) {
+                addMessage('system', 'Error getting response');
+            }
+
+            questionInput.value = '';
+        });
+
+        function addMessage(role, content) {
+            const div = document.createElement('div');
+            div.className = `p-3 rounded ${
+                role === 'user' ? 'bg-blue-100 ml-12' : 
+                role === 'assistant' ? 'bg-gray-100 mr-12' : 'bg-red-100'
+            }`;
+            div.textContent = content;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html> 
